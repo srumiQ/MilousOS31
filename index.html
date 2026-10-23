@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111b25">
+<meta property="og:title" content="Milouš OS 31.0">
+<meta property="og:description" content="Nalezena důležitá aktualizace systému. Nelze odložit.">
+<title>Milouš OS 31.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Manrope:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: fake firmware-update app. Installer overlay, then a column of system "modules" on workshop-grey paper, hazard tape where furniture is involved. */
+:root{
+  --paper:#e7ebef; --panel:#fbfcfd; --ink:#111b25; --muted:#586676; --line:#c6cfd8;
+  --arc:#2f4bff; --spark:#ff5a1f; --hazard:#ffc400; --ok:#168a57; --sun:#fff1c9;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--arc);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+.mono{font-family:var(--f-mono)}
+.wrap{max-width:1040px;margin:0 auto}
+
+/* status bar */
+.status{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;align-items:center;
+  font-family:var(--f-mono);font-size:12px;color:var(--muted);padding-block:14px;border-bottom:1px solid var(--line)}
+.status b{color:var(--ink);font-weight:600}
+.status .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end;padding-block:40px 28px}
+.hero .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--spark);font-weight:600}
+.hero h1{font-size:clamp(40px,8vw,84px);font-weight:900;letter-spacing:-.02em;margin-top:8px}
+.hero h1 span{color:var(--arc)}
+.hero p{max-width:56ch;color:var(--muted);margin:14px 0 0}
+.badge31{font-family:var(--f-display);font-weight:900;font-size:clamp(64px,12vw,128px);line-height:.8;color:transparent;
+  -webkit-text-stroke:2px var(--ink);letter-spacing:-.04em}
+@media (max-width:620px){.hero{grid-template-columns:1fr}.badge31{display:none}}
+
+/* grid of modules */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.span2{grid-column:1/-1}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.mod{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.mod-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.mod-head h2{font-size:20px;font-weight:700}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.tag.hot{border-color:var(--spark);color:var(--spark)}
+.tag.blue{border-color:var(--arc);color:var(--arc)}
+.lede{color:var(--muted);margin:0;font-size:15px}
+
+.btn{border:2px solid var(--ink);background:var(--ink);color:var(--panel);border-radius:10px;padding:10px 16px;font-weight:800;font-size:15px;transition:transform .12s}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.spark{background:var(--spark);border-color:var(--spark);color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* changelog */
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.log li{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:baseline}
+.log .k{font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.06em;padding:3px 6px;border-radius:5px;text-align:center}
+.k.new{background:#dfe5ff;color:var(--arc)} .k.imp{background:#d9f2e6;color:var(--ok)}
+.k.fix{background:#ffe3d6;color:#c23c08} .k.del{background:#e4e7eb;color:var(--muted)} .k.bug{background:#fff1b8;color:#7a5c00}
+@media (max-width:420px){.log li{grid-template-columns:1fr;gap:4px}.log .k{justify-self:start}}
+
+/* chat */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:7px 12px;font-size:14px;font-weight:600}
+.chip:hover{border-color:var(--ink)}
+.chat{display:flex;flex-direction:column;gap:8px;min-height:120px;max-height:300px;overflow-y:auto;padding:12px;background:var(--paper);border-radius:10px}
+.bub{max-width:85%;padding:8px 12px;border-radius:14px;font-size:14px}
+.bub.me{align-self:flex-end;background:var(--arc);color:#fff;border-bottom-right-radius:4px}
+.bub.him{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.sys{align-self:center;background:none;color:var(--muted);font-family:var(--f-mono);font-size:12px}
+.askrow{display:flex;gap:8px}
+.askrow input{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;background:var(--panel);color:var(--ink)}
+.meter{display:flex;justify-content:space-between;align-items:center;font-family:var(--f-mono);font-size:13px;gap:10px;flex-wrap:wrap}
+.meter b{font-size:22px;color:var(--spark);font-variant-numeric:tabular-nums}
+
+/* wardrobe */
+.hazard{height:12px;border-radius:4px;background:repeating-linear-gradient(-45deg,var(--hazard) 0 14px,var(--ink) 14px 28px)}
+.wardrobe-wrap{display:grid;grid-template-columns:minmax(0,220px) 1fr;gap:20px;align-items:center}
+@media (max-width:520px){.wardrobe-wrap{grid-template-columns:1fr}}
+.wardrobe{aspect-ratio:3/4;max-width:100%;background:#d8b98a;border:3px solid #7a5a2e;border-radius:6px;position:relative;display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:10px}
+.wardrobe::before{content:"";position:absolute;left:50%;top:10px;bottom:10px;width:3px;background:#7a5a2e;transform:translateX(-50%)}
+.screws{position:absolute;inset:14px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);place-items:center}
+.screw{width:34px;height:34px;border-radius:50%;border:2px dashed #7a5a2e;background:#c9a46b;display:grid;place-items:center;transition:transform .35s,background .2s;padding:0}
+.screw svg{width:18px;height:18px}
+.screw.done{border-style:solid;border-color:#4b4b4b;background:#b9c1c9;transform:rotate(270deg)}
+.bar{height:14px;border-radius:99px;background:var(--paper);border:1px solid var(--line);overflow:hidden}
+.bar > i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s,background .3s}
+.wmsg{min-height:3em;margin:0;font-size:15px}
+.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translateX(-6px) rotate(-1deg)}40%{transform:translateX(6px) rotate(1deg)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+
+/* cabrio */
+.cabrio{transition:background .5s}
+.cabrio.on{background:var(--sun);border-color:#f0c96a}
+.switch{display:flex;align-items:center;gap:12px;font-weight:800}
+.switch input{appearance:none;width:56px;height:30px;border-radius:99px;background:var(--line);position:relative;transition:background .2s;cursor:pointer;flex:none}
+.switch input::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch input:checked{background:var(--spark)} .switch input:checked::after{left:29px}
+.car{width:100%;max-width:100%;height:auto}
+.car .roof{transition:opacity .4s,transform .4s;transform-origin:250px 70px}
+.cabrio.on .car .roof{opacity:0;transform:translateY(-14px)}
+.car .shades,.car .sunrays{opacity:0;transition:opacity .4s}
+.cabrio.on .car .shades,.cabrio.on .car .sunrays{opacity:1}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{border-top:2px solid var(--ink);padding-top:6px}
+.stat small{display:block;font-family:var(--f-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat b{font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+@media (max-width:420px){.stats{grid-template-columns:1fr}}
+
+/* germany */
+.count{font-family:var(--f-display);font-size:clamp(30px,6vw,44px);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.dict{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.dict dt{font-family:var(--f-mono);font-weight:600}
+.dict dd{margin:0;color:var(--muted)}
+
+/* papa */
+.dl{display:flex;flex-direction:column;gap:6px}
+.dl .bar > i{background:repeating-linear-gradient(-45deg,var(--arc) 0 10px,#5c72ff 10px 20px);background-size:28px 28px;animation:stripes 1s linear infinite;width:83%}
+@keyframes stripes{to{background-position:28px 0}}
+.dl-row{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12px;color:var(--muted);gap:8px;flex-wrap:wrap}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.checks li{display:flex;gap:10px;align-items:baseline}
+.checks .st{font-family:var(--f-mono);font-size:11px;font-weight:600;min-width:84px;flex:none}
+.st.ok{color:var(--ok)} .st.wip{color:var(--arc)} .st.warn{color:var(--spark)}
+
+/* cake */
+.cake-mod{align-items:center;text-align:center}
+.cake{width:min(100%,520px);display:flex;flex-direction:column;align-items:center}
+.candles{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 9px;padding:0 14px 6px;max-width:470px}
+.candle{width:9px;height:34px;border-radius:2px;background:repeating-linear-gradient(180deg,#fff 0 5px,var(--arc) 5px 9px);position:relative;margin-top:16px}
+.candle::before{content:"";position:absolute;left:50%;top:-15px;width:10px;height:14px;transform:translateX(-50%);border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+  background:radial-gradient(circle at 50% 70%,#fff6b0 0 25%,#ffb020 50%,var(--spark) 80%);animation:flick .5s ease-in-out infinite alternate}
+.candle.out::before{background:none;width:2px;height:10px;border-radius:2px;background:#9aa3ad;animation:none;opacity:.7}
+@keyframes flick{to{transform:translateX(-50%) scale(.85,1.08) rotate(3deg)}}
+.tier{width:100%;height:70px;background:#f4d5e0;border-radius:10px 10px 4px 4px;position:relative;border:2px solid var(--ink)}
+.tier::after{content:"";position:absolute;left:0;right:0;top:12px;height:14px;background:radial-gradient(circle at 12px 0,transparent 11px,#fff 12px) 0 0/24px 14px repeat-x}
+.tier.big{height:90px;width:112%;background:#c89a6a;border-radius:6px}
+.tier.big::after{background:radial-gradient(circle at 12px 0,transparent 11px,#f4d5e0 12px) 0 0/24px 14px repeat-x}
+.plate{width:126%;height:12px;background:var(--line);border-radius:0 0 99px 99px}
+@media (max-width:520px){.tier.big{width:104%}.plate{width:110%}}
+.cmsg{min-height:1.5em;font-weight:600;margin:0}
+.wish{max-width:62ch;text-align:left;border-top:1px solid var(--line);padding-top:20px;display:flex;flex-direction:column;gap:12px}
+.wish h3{font-size:clamp(26px,5vw,40px);font-weight:900}
+.wish h3 span{color:var(--spark)}
+.wish p{margin:0;font-size:17px}
+.sig{font-family:var(--f-display);font-weight:700;font-size:22px}
+
+/* installer overlay */
+html:has(#inst:not([hidden])),html:has(#inst:not([hidden])) body,.installing,.installing body{background:var(--ink)}
+.inst{background:var(--ink)}
+.nojs{color:#e9eef5;font-size:15px;margin:0}
+.inst{color:#e9eef5;min-height:100vh;min-height:100dvh;display:flex;justify-content:center;padding-block:24px 32px}
+.inst-box{width:min(100%,620px);display:flex;flex-direction:column;gap:16px}
+.btn,.chip,.screw,.switch input{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.inst .btn{font-size:17px;padding:14px 18px;flex:1 1 auto}
+.inst .logo{font-family:var(--f-display);font-weight:900;font-size:clamp(34px,8vw,56px);letter-spacing:-.02em;line-height:1}
+.inst .logo span{color:#8a9bff}
+.inst .meta{font-family:var(--f-mono);font-size:12px;color:#9fb0c2;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
+.inst .meta b{color:#e9eef5;font-weight:600}
+.ibar{height:16px;border-radius:99px;background:#24313f;overflow:hidden}
+.ibar i{display:block;height:100%;width:0;background:#8a9bff;transition:width .5s}
+.ibar.err i{background:var(--hazard)}
+.ipct{font-family:var(--f-mono);font-size:13px;display:flex;justify-content:space-between;color:#9fb0c2}
+.ilog{font-family:var(--f-mono);font-size:13px;line-height:1.6;background:#0a1118;border-radius:10px;padding:14px;min-height:96px;max-height:32vh;overflow-y:auto;color:#b9c7d6;font-size:12px}
+.ilog .er{color:var(--hazard)} .ilog .okl{color:#6fe0a8}
+.err-box{border:2px solid var(--hazard);border-radius:10px;overflow:hidden}
+.err-box .hazard{border-radius:0}
+.err-box .in{padding:14px;display:flex;flex-direction:column;gap:10px}
+.err-box h3{font-size:16px;color:var(--hazard)}
+.err-box p{margin:0;font-size:14px;color:#c9d4df}
+.inst .btn{background:#e9eef5;color:var(--ink);border-color:#e9eef5}
+.inst .btn.ghost{background:transparent;color:#e9eef5;border-color:#56677a}
+.inst .btn.spark{background:var(--spark);border-color:var(--spark);color:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;width:100%;height:100%}
+footer{margin-top:28px;font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:center}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<!-- INSTALLER -->
+<div class="inst" id="inst" aria-labelledby="instTitle">
+  <div class="inst-box">
+    <div class="logo" id="instTitle">Milouš<span>OS</span></div>
+    <div class="meta">
+      <span>Aktuální verze</span><b>30.0 (končí podpora)</b>
+      <span>Nová verze</span><b>31.0 „Táta Edition"</b>
+      <span>Velikost</span><b>365 dní, 1 byt, 1 Tucson</b>
+      <span>Vydavatel</span><b>Šrumik Software s.r.o.</b>
+    </div>
+    <div>
+      <div class="ibar" id="ibar"><i></i></div>
+      <div class="ipct"><span id="istep">Připraveno k instalaci</span><span id="ipct">0 %</span></div>
+    </div>
+    <div class="err-box" id="errBox" hidden>
+      <div class="hazard"></div>
+      <div class="in">
+        <h3>CHYBA 0x5K1N: Skříň se nepodařilo sestavit</h3>
+        <p id="errText">Zbyly 4 šroubky, chybí 1 nerv. Návod je jen obrázkový a panáček v něm se usmívá, což Milouše rozčílilo ještě víc.</p>
+        <div class="row">
+          <button class="btn ghost" id="btnThrow">Hodit šroubovák</button>
+          <button class="btn spark" id="btnMisa">Zavolat Míšu</button>
+        </div>
+      </div>
+    </div>
+    <noscript><p class="nojs">Tahle aktualizace potřebuje otevřít v prohlížeči (Safari nebo Chrome), náhled souboru ji neumí spustit.</p></noscript>
+    <div class="row">
+      <button class="btn" id="btnInstall">Instalovat aktualizaci</button>
+      <button class="btn spark" id="btnLaunch" hidden>Spustit Milouš OS 31.0</button>
+    </div>
+    <div class="ilog" id="ilog" aria-live="polite"><div>&gt; Nalezena důležitá aktualizace systému. Nelze odložit, stárnutí běží.</div></div>
+  </div>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <div class="status">
+    <span><span class="dot"></span><b>Milouš OS 31.0</b> · build 2026.10</span>
+    <span>Poloha: <b id="loc">…</b></span>
+    <span>Nervy: <b>stabilní</b> (pokud není poblíž nábytek)</span>
+  </div>
+
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Aktualizace úspěšně nainstalována</div>
+      <h1>Vítej ve verzi <span>31</span>, Milouši.</h1>
+      <p>Systém byl aktualizován na novou verzi. Většina funkcí zůstala zachována, některé se zlepšily, spaní do deseti bylo odebráno. Níže najdeš přehled změn a pár nových modulů. Na konci tě čeká dort.</p>
+    </div>
+    <div class="badge31" aria-hidden="true">31</div>
+  </header>
+
+  <main class="grid">
+    <!-- CHANGELOG -->
+    <section class="mod span2" aria-labelledby="h-log">
+      <div class="mod-head"><h2 id="h-log">Co je nového ve verzi 31.0</h2><span class="tag">Poznámky k vydání</span></div>
+      <ul class="log">
+        <li><span class="k new">NOVÉ</span><span><b>Táta mód (předběžný přístup).</b> Plná verze se spouští v novém roce. Aktualizace přijde v noci, nepůjde odložit a bude se hlásit každé tři hodiny.</span></li>
+        <li><span class="k imp">VYLEPŠENO</span><span>Konverzace nyní obsahují nový byt jen v 97 % případů (ve verzi 30 to bylo 100 %).</span></li>
+        <li><span class="k imp">VYLEPŠENO</span><span>Hrdost na Hyundai Tucson zvýšena o dalších 12 %. Interval mytí zkrácen na „kdykoli na něj sedne prach“.</span></li>
+        <li><span class="k fix">OPRAVENO</span><span>Při montáži nábytku už systém nepoužívá slova, která dítě v novém roce nesmí slyšet. <i>Oprava zatím nefunguje, předáno vývojářům.</i></span></li>
+        <li><span class="k fix">OPRAVENO</span><span>Svářečský modul přepnut na německé normy. Svary drží, němčina se drží méně.</span></li>
+        <li><span class="k del">ODEBRÁNO</span><span>Spaní do deseti, klidné víkendy a volné místo v kufru Tucsonu (nahrazeno kočárkem).</span></li>
+        <li><span class="k bug">ZNÁMÁ CHYBA</span><span>V létě v kabrioletu se systém hlásí jako Vin Diesel. Podobnost je vysoká, ale ne úplná.</span></li>
+      </ul>
+    </section>
+
+    <!-- BYTOMETR -->
+    <section class="mod" aria-labelledby="h-byt">
+      <div class="mod-head"><h2 id="h-byt">Bytometr</h2><span class="tag hot">Asistent</span></div>
+      <p class="lede">Zeptej se Milouše na cokoliv. Systém zaručí, že se rozhovor do deseti vteřin stočí k bytu.</p>
+      <div class="chips" id="chips"></div>
+      <div class="chat" id="chat" aria-live="polite"><div class="bub sys">Milouš je online · právě měří, jestli se do obýváku vejde gauč</div></div>
+      <form class="askrow" id="askForm">
+        <label for="askIn" class="sr" hidden>Vlastní otázka</label>
+        <input id="askIn" placeholder="Napiš vlastní otázku…" autocomplete="off">
+        <button class="btn" type="submit">Zeptat se</button>
+      </form>
+      <div class="meter"><span>Byt zmíněn v této relaci</span><b id="bytCount">0×</b></div>
+    </section>
+
+    <!-- SKRIN -->
+    <section class="mod" aria-labelledby="h-skrin">
+      <div class="hazard"></div>
+      <div class="mod-head"><h2 id="h-skrin">Simulátor skříně</h2><span class="tag hot">Vysoké riziko</span></div>
+      <p class="lede">Zašroubuj všech 12 šroubků. Hlídej si nervy.</p>
+      <div class="wardrobe-wrap">
+        <div class="wardrobe" id="wardrobe"><div class="screws" id="screws"></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+          <div class="meter"><span>Zašroubováno</span><b id="scCount">0/12</b></div>
+          <div><div class="meter" style="margin-bottom:6px"><span>Nervy</span><span id="nvPct" class="mono">10 %</span></div><div class="bar"><i id="nvBar"></i></div></div>
+          <p class="wmsg" id="wMsg">Návod má 46 stran a ani jedno slovo. Začni kterýmkoli šroubkem.</p>
+          <button class="btn ghost" id="wReset" hidden>Rozebrat a začít znovu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CABRIO -->
+    <section class="mod cabrio" id="cabrio" aria-labelledby="h-cab">
+      <div class="mod-head"><h2 id="h-cab">Režim kabriolet</h2><span class="tag">Sezónní funkce</span></div>
+      <label class="switch" for="cabSw"><input type="checkbox" id="cabSw"> <span id="cabLbl">Střecha nahoře. Je zima, jezdí se Tucsonem.</span></label>
+      <svg class="car" viewBox="0 0 500 200" role="img" aria-label="Renault kabriolet s řidičem">
+        <g class="sunrays" stroke="#ffb020" stroke-width="4" stroke-linecap="round">
+          <circle cx="440" cy="40" r="18" fill="#ffc400" stroke="none"/>
+          <line x1="440" y1="8" x2="440" y2="0"/><line x1="472" y1="40" x2="482" y2="40"/><line x1="408" y1="40" x2="398" y2="40"/>
+          <line x1="463" y1="17" x2="470" y2="10"/><line x1="417" y1="17" x2="410" y2="10"/><line x1="463" y1="63" x2="470" y2="70"/>
+        </g>
+        <!-- driver -->
+        <circle cx="232" cy="78" r="20" fill="#e8b38e" stroke="#111b25" stroke-width="3"/>
+        <ellipse cx="226" cy="64" rx="9" ry="4" fill="#fff" opacity=".7"/>
+        <g class="shades"><rect x="220" y="74" width="12" height="7" rx="2" fill="#111b25"/><rect x="236" y="74" width="12" height="7" rx="2" fill="#111b25"/><line x1="232" y1="77" x2="236" y2="77" stroke="#111b25" stroke-width="2"/></g>
+        <!-- roof -->
+        <path class="roof" d="M150 108 Q175 52 250 50 Q320 50 345 108 Z" fill="#2b3440" stroke="#111b25" stroke-width="3"/>
+        <!-- windshield -->
+        <path d="M300 108 L282 70" stroke="#111b25" stroke-width="4" stroke-linecap="round"/>
+        <!-- body -->
+        <path d="M40 150 Q38 112 92 108 L408 104 Q462 106 466 140 L466 152 Q466 158 458 158 L48 158 Q40 158 40 150 Z" fill="#ff5a1f" stroke="#111b25" stroke-width="3"/>
+        <rect x="430" y="118" width="26" height="10" rx="4" fill="#fff6b0" stroke="#111b25" stroke-width="2"/>
+        <line x1="200" y1="112" x2="200" y2="152" stroke="#111b25" stroke-width="2"/>
+        <circle cx="120" cy="160" r="26" fill="#2b3440" stroke="#111b25" stroke-width="3"/><circle cx="120" cy="160" r="10" fill="#c6cfd8"/>
+        <circle cx="384" cy="160" r="26" fill="#2b3440" stroke="#111b25" stroke-width="3"/><circle cx="384" cy="160" r="10" fill="#c6cfd8"/>
+        <line x1="0" y1="188" x2="500" y2="188" stroke="#586676" stroke-width="2" stroke-dasharray="20 14"/>
+      </svg>
+      <div class="stats">
+        <div class="stat"><small>Pocitová rychlost</small><b id="sFeel">0 km/h</b></div>
+        <div class="stat"><small>Skutečná rychlost</small><b id="sReal">0 km/h</b></div>
+        <div class="stat"><small>Vin Diesel index</small><b id="sVin">12 %</b></div>
+      </div>
+    </section>
+
+    <!-- GERMANY -->
+    <section class="mod" aria-labelledby="h-de">
+      <div class="mod-head"><h2 id="h-de">Modul Německo</h2><span class="tag blue">Po–Pá</span></div>
+      <p class="lede" id="deLbl">Do Feierabendu v pátek zbývá</p>
+      <div class="count" id="deCount" aria-live="off">--:--:--</div>
+      <dl class="dict">
+        <dt>Feierabend</dt><dd>Konec šichty. Nejkrásnější slovo německého jazyka.</dd>
+        <dt>Schweißnaht</dt><dd>Svar. U Milouše vždycky rovný, na rozdíl od skříně.</dd>
+        <dt>Wohnung</dt><dd>Byt. Pozor, spouští čtyřicetiminutový monolog.</dd>
+        <dt>Kinderwagen</dt><dd>Kočárek. Brzy největší věc v kufru Tucsonu.</dd>
+      </dl>
+    </section>
+
+    <!-- PAPA -->
+    <section class="mod span2" aria-labelledby="h-papa">
+      <div class="mod-head"><h2 id="h-papa">Táta mód 1.0</h2><span class="tag blue">Stahování</span></div>
+      <div class="dl">
+        <div class="dl-row"><span>Stahování balíčku tata_mod_1.0.pkg</span><span id="dlPct">83 %</span></div>
+        <div class="bar"><i></i></div>
+        <div class="dl-row"><span>Velikost: cca 3,5 kg · Zbývá: do nového roku</span><span>Zrušit: nedostupné</span></div>
+      </div>
+      <ul class="checks">
+        <li><span class="st ok">HOTOVO</span><span>Byt. Koupen, zařízen a popsán všem známým včetně pošťáka.</span></li>
+        <li><span class="st ok">HOTOVO</span><span>Rodinné auto. Tucson už se těší, jak mu někdo poblinká zadní sedačku.</span></li>
+        <li><span class="st ok">HOTOVO</span><span>Táta vtipy. Předinstalováno z výroby, aktualizace nebyla potřeba.</span></li>
+        <li><span class="st wip">PROBÍHÁ</span><span>Montáž postýlky. Upozornění: postýlka je taky nábytek. Doporučujeme předem zavolat Míšu.</span></li>
+        <li><span class="st warn">ODEBRÁNO</span><span>Spánek. Bude vrácen přibližně v roce 2045.</span></li>
+        <li><span class="st ok">NASTAVENO</span><span>Míša (bejby) má plná administrátorská práva. Všechny změny systému schvaluje ona.</span></li>
+      </ul>
+    </section>
+
+    <!-- CAKE -->
+    <section class="mod span2 cake-mod" aria-labelledby="h-cake">
+      <div class="mod-head" style="justify-content:center"><h2 id="h-cake">Poslední krok: sfoukni 31 svíček</h2></div>
+      <div class="cake">
+        <div class="candles" id="candles" aria-hidden="true"></div>
+        <div class="tier"></div>
+        <div class="tier big"></div>
+        <div class="plate"></div>
+      </div>
+      <p class="cmsg" id="cMsg" aria-live="polite">Hoří všech 31. Svářeč by se neměl bát ohně.</p>
+      <button class="btn spark" id="blow">Foukat</button>
+      <div class="wish" id="wish" hidden>
+        <h3>Všechno nejlepší k <span>31</span>, Milouši!</h3>
+        <p>Ať ti nový byt dělá radost, Tucson se leskne a kabrio v létě pořádně vrčí. Ať ti v Německu rychle utíká týden a doma pomalu víkend. A ať se ti skříně a postýlky skládají samy, nebo aspoň bez nadávek.</p>
+        <p>Hlavně ať se vám s Míšou v novém roce narodí zdravé mrně a ať jste všichni tři šťastní. Budeš skvělej táta. Skříň máš už skoro zvládnutou, tak to dítě dáš taky.</p>
+        <p>P.S. Pivo platím já. U tebe v bytě. Slyšel jsem, že je nový.</p>
+        <div class="sig">Tvůj Šrumik</div>
+      </div>
+    </section>
+  </main>
+  <footer>Milouš OS 31.0 · © Šrumik Software · Licence platí, dokud se budeme kamarádit, tedy navždy.</footer>
+</div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep=ms=>new Promise(r=>setTimeout(r,reduce?Math.min(ms,150):ms));
+
+/* ---------- installer ---------- */
+const inst=$('#inst'),ilog=$('#ilog'),ibar=$('#ibar'),ipct=$('#ipct'),istep=$('#istep');
+function line(t,cls){const d=document.createElement('div');d.textContent='> '+t;if(cls)d.className=cls;ilog.appendChild(d);ilog.scrollTop=ilog.scrollHeight}
+function setP(p,label){ibar.firstElementChild.style.width=p+'%';ipct.textContent=p+' %';if(label)istep.textContent=label}
+async function run(steps){for(const [p,t,c] of steps){await sleep(rnd(650,1100));setP(p,t);line(t,c)}}
+document.documentElement.classList.add('installing');
+let started=false;
+$('#btnInstall').addEventListener('click',async()=>{
+  if(started)return;started=true;const bi=$('#btnInstall');bi.disabled=true;bi.hidden=true;
+  await run([
+    [6,'Kontrola hardwaru… záda OK, kolena hlásí verzi 31'],
+    [15,'Záloha vzpomínek z verze 30.0…'],
+    [24,'Instalace balíčku byt.pkg (hypotéka: 30 let, splátky: navždy)'],
+    [33,'Kalibrace hrdosti na Hyundai Tucson… přetečení stupnice'],
+    [42,'Import německé slovní zásoby: Feierabend, Feierabend, Feierabend'],
+    [53,'Příprava modulu Táta mód (beta)…'],
+    [64,'Montáž skříně…']
+  ]);
+  await sleep(900);
+  ibar.classList.add('err');istep.textContent='Instalace pozastavena';
+  line('CHYBA: skříň. Milouš ztratil trpělivost.','er');
+  $('#errBox').hidden=false;$('#errBox').scrollIntoView({block:'nearest'});
+});
+let throws=0;
+$('#btnThrow').onclick=()=>{
+  throws++;inst.querySelector('.inst-box').classList.remove('shake');void inst.offsetWidth;inst.querySelector('.inst-box').classList.add('shake');
+  const t=['Šroubovák zapadl pod gauč. Skříň stále nestojí.','Druhý šroubovák trefil Tucson v garáži. Nervy: kritické.','Došly šroubováky. Zbývá jediná možnost.'];
+  $('#errText').textContent=t[Math.min(throws-1,2)];
+  line('Hozen šroubovák č. '+throws+'. Bez efektu.','er');
+  if(throws>=3)$('#btnThrow').disabled=true;
+};
+let called=false;
+$('#btnMisa').addEventListener('click',async()=>{
+  if(called)return;called=true;$('#errBox').hidden=true;ibar.classList.remove('err');
+  line('Volám Míšu…');
+  await run([
+    [72,'Míša přečetla návod. Skříň stojí za 4 minuty.','okl'],
+    [81,'Odstraňování nadávek z paměti… 3 zůstaly'],
+    [90,'Instalace funkce „Říct Míše, že to šlo samo“'],
+    [100,'Hotovo. Vítej ve verzi 31.0','okl']
+  ]);
+  $('#btnLaunch').hidden=false;$('#btnLaunch').focus({preventScroll:true});$('#btnLaunch').scrollIntoView({block:'nearest'});
+});
+$('#btnLaunch').addEventListener('click',()=>{inst.hidden=true;document.documentElement.classList.remove('installing');$('#app').hidden=false;window.scrollTo(0,0);confetti(120)});
+
+/* ---------- status location ---------- */
+function weekday(){const d=new Date();const w=d.getDay(),h=d.getHours();
+  return (w>=1&&w<=4)||(w===5&&h<14)||(w===1&&h>=5)}
+$('#loc').textContent=weekday()?'Německo, u svářečky':'doma, v novém bytě (samozřejmě)';
+
+/* ---------- bytometr ---------- */
+const Q={
+ 'Jak bylo v práci?':'Dobrý, celej tejden jsem svařoval zábradlí. Mimochodem, v bytě máme na balkoně taky zábradlí. Chceš vidět fotku? Mám jich čtyřicet.',
+ 'Viděl jsi zápas?':'Neviděl, vrtal jsem. Víš, kolik je v novým bytě zásuvek? Dvaačtyřicet. Počítal jsem to dvakrát.',
+ 'Co miminko?':'Super. Už máme vybranej pokojíček, ten vedle koupelny. Ta má mimochodem podlahovku, to jsem ti říkal?',
+ 'Co Tucson?':'Tucson je v pohodě, stojí na stání u bytu. Ke stání se jde přímo z výtahu. Z bytu. Do výtahu. Chápeš?',
+ 'Jak se máš?':'Dobře, jen řešíme byt. Teda nic neřešíme, je hotovej. Ale řešíme ho.',
+ 'Pivo v pátek?':'Jasně, přijď k nám do bytu. Ukážu ti, jak jsem tam srovnal ty lišty. Rovně jak svar.'
+};
+const generic=['Zajímavý. To mi připomíná byt.','Hm, jo. Hele, a víš, že z ložnice v bytě je vidět až na kopec?','To je jak u nás v bytě. Teda vlastně ne, u nás je to lepší.','Jo jo. A už jsem ti ukazoval kuchyň? Počkej, mám video.'];
+let bytN=0;const chat=$('#chat');
+function bub(t,c){const d=document.createElement('div');d.className='bub '+c;d.textContent=t;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
+async function ask(q,a){
+  bub(q,'me');const typing=document.createElement('div');typing.className='bub sys';typing.textContent='Milouš píše…';chat.appendChild(typing);chat.scrollTop=chat.scrollHeight;
+  await sleep(rnd(700,1200));typing.remove();bub(a,'him');bytN++;$('#bytCount').textContent=bytN+'×';
+  if(bytN===5)bub('Úspěšnost systému: 100 %. Byt nikdy nemine.','sys');
+}
+const chips=$('#chips');Object.keys(Q).forEach(k=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=k;b.onclick=()=>ask(k,Q[k]);chips.appendChild(b)});
+$('#askForm').onsubmit=e=>{e.preventDefault();const v=$('#askIn').value.trim();if(!v)return;$('#askIn').value='';ask(v,generic[rnd(0,generic.length-1)])};
+
+/* ---------- skříň ---------- */
+const sw=$('#screws'),N=12;let done=new Set(),nerves=10,flipped=false,breaks=0,finished=false;
+const screwSvg='<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M10 4v12" stroke="#3a2a12" stroke-width="2.4" stroke-linecap="round"/></svg>';
+const btns=[];
+for(let i=0;i<N;i++){const b=document.createElement('button');b.className='screw';b.type='button';b.innerHTML=screwSvg;b.setAttribute('aria-label','Šroubek '+(i+1));b.onclick=()=>screw(i);sw.appendChild(b);btns.push(b)}
+function upd(){$('#scCount').textContent=done.size+'/'+N;const n=Math.min(nerves,100);$('#nvPct').textContent=n+' %';const bar=$('#nvBar');bar.style.width=n+'%';
+  bar.style.background=n<50?'var(--ok)':n<80?'var(--hazard)':'var(--spark)'}
+const lines=['Dobrý. Jde to.','Proč je tenhle šroubek kratší než ostatní?','Kolíček B nesedí do díry B. Nebo je to díra D?','Míša se ptá, jestli to nechce přečíst. Nechce.','Tohle by v Německu svařil za minutu.','Zbývá kousek. Neříkej to nahlas.'];
+function shakeW(){const w=$('#wardrobe');w.classList.remove('shake');void w.offsetWidth;w.classList.add('shake')}
+function screw(i){
+  if(finished||done.has(i))return;
+  done.add(i);btns[i].classList.add('done');btns[i].setAttribute('aria-label','Šroubek '+(i+1)+', zašroubováno');
+  nerves+=rnd(5,11);let msg=lines[rnd(0,lines.length-1)];
+  if(!flipped&&done.size===8){flipped=true;nerves+=18;shakeW();
+    msg='Díl C je vzhůru nohama. Povol 4 šroubky a jedeme znovu.';
+    const arr=[...done].sort(()=>Math.random()-.5).slice(0,4);
+    setTimeout(()=>{arr.forEach(j=>{done.delete(j);btns[j].classList.remove('done');btns[j].setAttribute('aria-label','Šroubek '+(j+1))});upd()},reduce?0:500);
+  }
+  if(nerves>=100){breaks++;nerves=45;shakeW();msg='Nervy 100 %. Milouš odešel na balkon (nový, mimochodem) a vydýchal se. Nervy zpět na 45 %.'}
+  if(done.size===N&&!(flipped&&done.size<N)){finished=true;nerves=Math.min(nerves,100);
+    msg='Skříň stojí! Zbyly 3 šroubky a nikdo neví odkud. Schovej si je na postýlku.'+(breaks?' Přestávek na balkoně: '+breaks+'.':'');
+    $('#wReset').hidden=false;confetti(60)}
+  $('#wMsg').textContent=msg;upd();
+}
+$('#wReset').onclick=()=>{done.clear();nerves=10;flipped=false;breaks=0;finished=false;btns.forEach((b,i)=>{b.classList.remove('done');b.setAttribute('aria-label','Šroubek '+(i+1))});$('#wReset').hidden=true;$('#wMsg').textContent='Rozebráno. Návod se mezitím ztratil, ale ty už to umíš.';upd()};
+upd();
+
+/* ---------- kabrio ---------- */
+let cabT=null;
+$('#cabSw').onchange=e=>{
+  const on=e.target.checked;$('#cabrio').classList.toggle('on',on);
+  $('#cabLbl').textContent=on?'Střecha dole. Rodina, rychlost, sluneční brýle.':'Střecha nahoře. Je zima, jezdí se Tucsonem.';
+  clearInterval(cabT);
+  if(on){let f=0,r=0,v=12;cabT=setInterval(()=>{f=Math.min(f+rnd(14,30),280);r=Math.min(r+rnd(3,8),87);v=Math.min(v+rnd(4,9),94);
+      $('#sFeel').textContent=f+' km/h';$('#sReal').textContent=r+' km/h';$('#sVin').textContent=v+' %';
+      if(f>=280&&r>=87&&v>=94)clearInterval(cabT)},120)}
+  else{$('#sFeel').textContent='0 km/h';$('#sReal').textContent='0 km/h';$('#sVin').textContent='12 %'}
+};
+
+/* ---------- Německo ---------- */
+function tick(){
+  const now=new Date(),w=now.getDay();
+  if(!weekday()){$('#deLbl').textContent='Víkend. Systém běží v domácím režimu.';$('#deCount').textContent='Feierabend';return}
+  const t=new Date(now);t.setDate(now.getDate()+((5-w+7)%7));t.setHours(14,0,0,0);
+  let s=Math.max(0,Math.floor((t-now)/1000));const d=Math.floor(s/86400);s%=86400;
+  const p=n=>String(n).padStart(2,'0');
+  $('#deLbl').textContent='Do pátečního Feierabendu (14:00) zbývá';
+  $('#deCount').textContent=(d?d+' d ':'')+p(Math.floor(s/3600))+':'+p(Math.floor(s%3600/60))+':'+p(s%60);
+}
+tick();setInterval(tick,1000);
+
+/* ---------- dort ---------- */
+const cw=$('#candles');const cs=[];for(let i=0;i<31;i++){const c=document.createElement('span');c.className='candle';cw.appendChild(c);cs.push(c)}
+const blowMsgs=['Dobrý začátek. Ještě to chce plíce svářeče.','Na 31 svíček už je potřeba rozjezd.','Míša drží hasičák. Pro jistotu.','Tohle by Tucson s klimatizací sfoukl rychlejc.','Ještě kousek. Jako u skříně.','Poslední! Teď neztrácej nervy.'];
+let bi=0;
+$('#blow').onclick=()=>{
+  const lit=cs.filter(c=>!c.classList.contains('out'));if(!lit.length)return;
+  lit.sort(()=>Math.random()-.5).slice(0,rnd(4,8)).forEach(c=>c.classList.add('out'));
+  const left=cs.filter(c=>!c.classList.contains('out')).length;
+  if(!left){$('#cMsg').textContent='Všech 31 zhasnuto. Přání se splní, systém to garantuje.';$('#blow').hidden=true;$('#wish').hidden=false;confetti(220);
+    setTimeout(()=>$('#wish').scrollIntoView({behavior:reduce?'auto':'smooth',block:'center'}),200)}
+  else{$('#cMsg').textContent=blowMsgs[Math.min(bi++,blowMsgs.length-1)]+' Hoří ještě '+left+'.'}
+};
+
+/* ---------- confetti ---------- */
+const cv=$('#confetti'),cx=cv.getContext('2d');let parts=[],raf=null;
+function size(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
+addEventListener('resize',size);size();
+const cols=['#ff5a1f','#2f4bff','#ffc400','#168a57','#f4a3c0'];
+function confetti(n){if(reduce)return;
+  for(let i=0;i<n;i++)parts.push({x:innerWidth/2+rnd(-80,80),y:innerHeight*.35,vx:(Math.random()-.5)*14,vy:Math.random()*-12-4,r:rnd(5,10),a:Math.random()*6,va:(Math.random()-.5)*.4,c:cols[rnd(0,4)],life:0});
+  if(!raf)loop()}
+function loop(){cx.clearRect(0,0,innerWidth,innerHeight);
+  parts.forEach(p=>{p.vy+=.35;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;p.life++;cx.save();cx.translate(p.x,p.y);cx.rotate(p.a);cx.fillStyle=p.c;cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);cx.restore()});
+  parts=parts.filter(p=>p.y<innerHeight+40&&p.life<400);
+  raf=parts.length?requestAnimationFrame(loop):(cx.clearRect(0,0,innerWidth,innerHeight),null)}
+})();
+</script>
+
+</body>
+</html>
